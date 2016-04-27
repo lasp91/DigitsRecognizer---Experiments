@@ -58,33 +58,34 @@ private:
 
 //_________________________________________________________________________________________________
 
-int main()
+using Observations = vector<Observation>;
+
+auto ObservationData = [](vector<string>& csvData)
 {
-  using Observations = vector<Observation>;
+  Observations observations;
 
-  auto ObservationData = [](vector<string>& csvData)
+  for (size_t line = 0; line < csvData.size() - 1; ++line)
   {
-    Observations observations;
+    vector<string> columns;
+    split(csvData[line], ',', columns);
 
-    for (size_t line = 0; line < csvData.size() - 1; ++line)
+    auto label = columns[0];
+    Pixels pixels;
+
+    for (size_t i = 1; i < columns.size(); ++i)
     {
-      vector<string> columns;
-      split(csvData[line], ',', columns);
-
-      auto label = columns[0];
-      Pixels pixels;
-
-      for (size_t i = 1; i < columns.size(); ++i)
-      {
-        pixels.emplace_back(atoi(columns[i].c_str()));
-      }
-
-      observations.emplace_back(Observation(label, pixels));
+      pixels.emplace_back(atoi(columns[i].c_str()));
     }
 
-    return observations;
-  };
+    observations.emplace_back(Observation(label, pixels));
+  }
 
+  return observations;
+};
+
+
+int main()
+{
   //_________________________________________________________________________________________________
 
   auto readAllLines = [](string path)
@@ -108,7 +109,7 @@ int main()
 
   //_________________________________________________________________________________________________
 
-  auto reader = [&readAllLines, &ObservationData](string path)
+  auto reader = [&readAllLines](string path)
   {
     auto allLines = readAllLines(path);
 
