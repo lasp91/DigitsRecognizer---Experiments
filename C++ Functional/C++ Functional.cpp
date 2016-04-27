@@ -83,33 +83,33 @@ auto ObservationData = [](vector<string>& csvData)
   return observations;
 };
 
+//_________________________________________________________________________________________________
+
+auto readAllLines = [](string path)
+{
+  ifstream file(path.c_str());
+  stringstream buffer;
+
+  if (!file)
+  {
+    puts("File does not exist");
+  }
+
+  buffer << file.rdbuf();
+
+  string str = buffer.str();
+  vector<string> lines;
+
+  split(str, '\n', lines);
+  return lines;
+};
+
+//_________________________________________________________________________________________________
+
 
 int main()
 {
-  //_________________________________________________________________________________________________
-
-  auto readAllLines = [](string path)
-  {
-    ifstream file(path.c_str());
-    stringstream buffer;
-
-    if (!file)
-    {
-      puts("File does not exist");
-    }
-
-    buffer << file.rdbuf();
-
-    string str = buffer.str();
-    vector<string> lines;
-
-    split(str, '\n', lines);
-    return lines;
-  };
-
-  //_________________________________________________________________________________________________
-
-  auto reader = [&readAllLines](string path)
+  auto reader = [](string path)
   {
     auto allLines = readAllLines(path);
 
