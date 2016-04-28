@@ -58,7 +58,7 @@ let main argv =
 
     let evaluate validationSet classifier = 
         validationSet
-        |> Array.averageBy (fun x -> if classifier x.Pixels = x.Label then 1. else 0.)
+        |> Array.averageBy (fun x -> if (classifier x.Pixels) = x.Label then 1. else 0.)
         |> printfn "Correct: %.3f"
 
     let start = DateTime.Now
