@@ -35,7 +35,8 @@ let main argv =
 
     let euclideanDistance (pixels1, pixels2) =
         Array.zip pixels1 pixels2
-        |> Array.map (fun (x, y) -> pown (x - y) 2)
+//        |> Array.map (fun (x, y) -> pown (x - y) 2)
+        |> Array.map (fun (x, y) -> (x - y) * (x - y))
         |> Array.sum
 
     let classify (trainingSet : Observation[]) (dist : Distance)  (pixels : int[]) =
@@ -69,12 +70,24 @@ let main argv =
     let finish = DateTime.Now
     let elapsed = finish - start
 
+    printfn "Elapsed time = %Asec %Ams\n" elapsed.Seconds elapsed.Milliseconds
+
+    let start = DateTime.Now
+    printfn "  Euclidean F#"
+    evaluate validationData euclideanClassifier
+
+    let finish = DateTime.Now
+    let elapsed = finish - start
+
     printfn "Elapsed time = %Asec %Ams" elapsed.Seconds elapsed.Milliseconds
-
-    printfn "Euclidean"
-    //evaluate validationData euclideanClassifier
-
     System.Console.ReadLine() |> ignore
+
+// Redefining a variable doesn't seem to cause an error....
+    let aa = 8
+    printfn ">>>> %d" aa
+
+    let aa = 9
+    printfn ">>>> %d" aa
 
 // Illustration: full distance function
 
