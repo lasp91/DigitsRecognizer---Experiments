@@ -203,17 +203,6 @@ int main() noexcept
     auto length = pixels1.size();
     auto distance = 0;
 
-//#define USE_CONCURRENCY
-
-#ifdef USE_CONCURRENCY
-    concurrency::parallel_for(size_t(0), length, [&](size_t i)
-    {
-      // Use int product instead of pow() for performance.
-//      distance += pow(pixels1[i] - pixels2[i], 2);
-      int dif = pixels1[i] - pixels2[i];
-      distance += dif * dif;
-  });
-#else
     for (size_t i = 0; i < length; i++)
     {
       // Use int product instead of pow() for performance.
@@ -221,7 +210,6 @@ int main() noexcept
       int dif = pixels1[i] - pixels2[i];
       distance += dif * dif;
     }
-#endif
 
     return distance;
   };
@@ -266,20 +254,38 @@ int main() noexcept
 
   //_________________________________________________________________________________________________
 
+  #define USE_CONCURRENCY
+
   // evaluate lambda
   auto evaluate = [](Observations& validationSet, Classifier classifier) noexcept
   {
+    auto length = validationSet.size();
+
+#ifdef USE_CONCURRENCY
+    #include <atomic>
+
+    atomic<int> sum = 0;
+
+    concurrency::parallel_for_each(begin(validationSet), end(validationSet), [&](Observation& it)
+    {
+      if (classifier(it.pixels()) == it.label())
+      {
+        sum += 1;
+      }
+    });
+#else
     int sum = 0;
 
-    for (auto it = validationSet.begin(); it != validationSet.end(); ++it)
+    for (auto it = begin(validationSet); it != end(validationSet); ++it)
     {
       if (classifier(it->pixels()) == it->label())
       {
         sum += 1;
       }
     }
-
-    cout << "Correctly classified: " << ((double)sum) / validationSet.size() * 100.0 << " %\n";
+#endif
+    cout << "Sum = " << sum << "\n";  // For testing purpose only.
+    cout << "Correctly classified: " << ((double)sum) / length * 100.0 << " %\n";
   };
 
   //_________________________________________________________________________________________________

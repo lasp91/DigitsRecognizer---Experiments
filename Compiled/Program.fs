@@ -57,10 +57,18 @@ let main argv =
 //    let manhattanClassifier = train trainingData manhattanDistance
 //    let euclideanClassifier = train trainingData euclideanDistance
 
+#if USE_CONCURRENCY // Use parallel map
+    let evaluate validationSet classifier = 
+        validationSet
+        |> Array.Parallel.map (fun x -> if classifier x.Pixels = x.Label then 1. else 0.)
+        |> Array.average
+        |> printfn "Parallel - Correct: %.3f"
+#else
     let evaluate validationSet classifier = 
         validationSet
         |> Array.averageBy (fun x -> if (classifier x.Pixels) = x.Label then 1. else 0.)
         |> printfn "Correct: %.3f"
+#endif
 
     let start = DateTime.Now
 

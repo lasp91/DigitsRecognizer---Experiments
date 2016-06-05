@@ -11,6 +11,7 @@ namespace CSharp
     public static double Correct(IEnumerable<Observation> validationSet, BasicClassifier classifier)
     {
       return validationSet
+          .AsParallel()
           .Select(obs => Score(obs, classifier))
           .Average();
     }
