@@ -7,7 +7,8 @@ For the “Functional C++” project I tried to use “types” and “lambdas�
 There’s also an F# project that can be compiled.
 Running the code is also possible to compare the execution time between the different projects.
 
-There’s also another repo with Kotlin code, where it’s possible to compare the code with the ones here in this repo.
-
 --- I used the “CsvParser_2016_03_28.zip” on the C++ code. The file can be found here:
 https://sourceforge.net/projects/cccsvparser/files/2016-03-28/
+
+There’s also another repo with Kotlin code, where it’s possible to compare the code with the ones here in this repo:
+https://github.com/lasp91/DigitsRecognizer_using_Kotlin/tree/master
