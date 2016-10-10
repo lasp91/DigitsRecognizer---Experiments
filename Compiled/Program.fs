@@ -28,10 +28,22 @@ let main argv =
     let validationPath = __SOURCE_DIRECTORY__ + @"../../Data/validationsample.csv"
     let validationData = reader validationPath
 
-    let manhattanDistance (pixels1, pixels2) =
+    let manhattanDistance (pixels1, pixels2) =  // Using zip and map
         Array.zip pixels1 pixels2
         |> Array.map (fun (x, y) -> abs (x - y))
         |> Array.sum
+
+    let manhattanDistance3 (pixels1, pixels2) = // Uisng map2
+        (pixels1, pixels2)
+        ||> Array.map2 (fun x y -> abs (x - y))
+        |> Array.sum
+
+    let manhattanDistance2 (pixels1 : int[], pixels2 : int[]) = // Using all imperative
+        let mutable sum = 0
+
+        for i = 0 to pixels1.Length - 1 do
+          sum <- sum + abs(pixels1.[i] - pixels2.[i])
+        sum
 
     let euclideanDistance (pixels1, pixels2) =
         Array.zip pixels1 pixels2
@@ -52,7 +64,7 @@ let main argv =
 //            |> fun x -> x.Label
 //        classify
 
-    let manhattanClassifier = classify trainingData manhattanDistance
+    let manhattanClassifier = classify trainingData manhattanDistance2
     let euclideanClassifier = classify trainingData euclideanDistance
 //    let manhattanClassifier = train trainingData manhattanDistance
 //    let euclideanClassifier = train trainingData euclideanDistance
@@ -80,14 +92,15 @@ let main argv =
 
     printfn "Elapsed time = %Asec %Ams\n" elapsed.Seconds elapsed.Milliseconds
 
-    let start = DateTime.Now
-    printfn "  Euclidean F#"
-    evaluate validationData euclideanClassifier
-
-    let finish = DateTime.Now
-    let elapsed = finish - start
-
-    printfn "Elapsed time = %Asec %Ams" elapsed.Seconds elapsed.Milliseconds
+// Ignoring the Euclidean classifier for now... Simple test.
+//    let start = DateTime.Now
+//    printfn "  Euclidean F#"
+//    evaluate validationData euclideanClassifier
+//
+//    let finish = DateTime.Now
+//    let elapsed = finish - start
+//
+//    printfn "Elapsed time = %Asec %Ams" elapsed.Seconds elapsed.Milliseconds
     System.Console.ReadLine() |> ignore
 
 // Redefining a variable doesn't seem to cause an error....
