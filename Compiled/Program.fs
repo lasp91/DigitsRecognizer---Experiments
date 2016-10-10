@@ -2,7 +2,7 @@
 // See the 'F# Tutorial' project for more help.
 open System
 open System.IO
-
+Test
 type Observation = { Label : string; Pixels : int[] }
 type Distance = int[] * int[] -> int
 type Classifier = int[] -> string
