@@ -33,7 +33,7 @@ let main argv =
         |> Array.map (fun (x, y) -> abs (x - y))
         |> Array.sum
 
-    let manhattanDistance3 (pixels1, pixels2) = // Uisng map2
+    let manhattanDistance3 (pixels1, pixels2) = // Using map2
         (pixels1, pixels2)
         ||> Array.map2 (fun x y -> abs (x - y))
         |> Array.sum
