@@ -14,7 +14,7 @@ let main argv =
     let ObservationData (csvData : string) =
         let columns = csvData.Split(',')
         let label = columns.[0]
-        let pixels = columns.[1..] |> Array.map int
+        let pixels = columns.[1..] |> Array.map int 
         { Label = label; Pixels = pixels }
 
     let reader path = 
@@ -93,14 +93,15 @@ let main argv =
     printfn "Elapsed time = %Asec %Ams\n" elapsed.Seconds elapsed.Milliseconds
 
 // Ignoring the Euclidean classifier for now... Simple test.
-//    let start = DateTime.Now
-//    printfn "  Euclidean F#"
-//    evaluate validationData euclideanClassifier
-//
-//    let finish = DateTime.Now
-//    let elapsed = finish - start
-//
-//    printfn "Elapsed time = %Asec %Ams" elapsed.Seconds elapsed.Milliseconds
+    let start = DateTime.Now
+
+    printfn "  Euclidean F#"
+    evaluate validationData euclideanClassifier
+
+    let finish = DateTime.Now
+    let elapsed = finish - start
+
+    printfn "Elapsed time = %Asec %Ams" elapsed.Seconds elapsed.Milliseconds
     System.Console.ReadLine() |> ignore
 
 // Redefining a variable doesn't seem to cause an error....

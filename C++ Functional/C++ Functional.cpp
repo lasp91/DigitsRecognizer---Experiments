@@ -13,55 +13,36 @@
 using namespace std;
 using namespace std::this_thread; // sleep_for, sleep_until
 
-// split function
-auto split(const string& str, char delim, vector<string>& output) noexcept
+class funcArray
 {
-  auto i = 0;
-  auto pos = str.find(delim);
-
-  while (pos != string::npos)
+public:
+  funcArray(int size)
   {
-    output.emplace_back(str.substr(i, pos - i));
-    i = ++pos;
-    pos = str.find(delim, pos);
+    _funcArray = new int[size];
+    _size = size;
+  }
 
-    if (pos == string::npos) 
+  ~funcArray()
+  {
+    delete _funcArray;
+  }
+
+  int* map(std::function<int(int)> f)
+  {
+    int* temp = new int[_size];
+
+    for (auto i = 0; i < _size; i++)
     {
-      auto finalString = str.substr(i, str.length());
-
-      if (!finalString.empty())
-      {
-        output.emplace_back();
-      }
+      temp[i] = f(i);
     }
+
+    return temp;
   }
 
-  return output.size();
-}
-
-// readAllLines lambda
-auto readAllLines = [](string& path)
-{
-  ifstream file(path.c_str());
-  stringstream buffer;
-
-  if (!file)
-  {
-    // Any 'throw' type is good for the moment...
-    throw std::invalid_argument(" **** File does not exist");
-  }
-
-  buffer << file.rdbuf();
-
-  string str = buffer.str();
-  vector<string> lines;
-
-  split(str, '\n', lines);
-
-  return lines;
+private:
+  int* _funcArray;
+  int _size;
 };
-
-//_________________________________________________________________________________________________
 
 using Pixels = vector<int>;
 
@@ -89,7 +70,52 @@ private:
   Pixels _pixels;
 };
 
-//_________________________________________________________________________________________________
+auto split(const string& str, char delim, vector<string>& output) noexcept
+{
+  auto i = 0;
+  auto pos = str.find(delim);
+
+  while (pos != string::npos)
+  {
+    output.emplace_back(str.substr(i, pos - i));
+    i = ++pos;
+    pos = str.find(delim, pos);
+
+    if (pos == string::npos) 
+    {
+      auto finalString = str.substr(i, str.length());
+
+      if (!finalString.empty())
+      {
+        output.emplace_back(finalString);
+      }
+    }
+  }
+
+  return output.size();
+}
+
+auto readAllLines(string& path)
+{
+  ifstream file(path.c_str());
+
+  if (!file)
+  {
+    // Any 'throw' type is good for the moment...
+    throw std::invalid_argument(" **** File does not exist");
+  }
+
+  stringstream buffer;
+  buffer << file.rdbuf();
+  file.close();
+
+  string str = buffer.str();
+  vector<string> lines;
+
+  split(str, '\n', lines);
+
+  return lines;
+}
 
 
 // Type definitions
@@ -97,10 +123,7 @@ using Observations = vector<Observation>;
 using Distance = function <int(Pixels pixels1, Pixels pixels2)>;
 using Classifier = function<string(Pixels pixels)>;
 
-//_________________________________________________________________________________________________
-
-// observationData lambda
-auto observationData = [](string& csvData) noexcept
+auto observationData(string& csvData) noexcept
 {
   vector<string> columns;
 
@@ -115,12 +138,9 @@ auto observationData = [](string& csvData) noexcept
   }
 
   return Observation(label, pixels);
-};
+}
 
-//_________________________________________________________________________________________________
-
-// reader lambda
-auto reader = [](string path) noexcept
+auto reader(string path) noexcept
 {
   auto allLines = readAllLines(path);
 
@@ -128,7 +148,7 @@ auto reader = [](string path) noexcept
 
   Observations observations;
 
-  //#define TRANSFORM
+//#define TRANSFORM
 
 #ifdef TRANSFORM
   observations.resize(allLines.size());
@@ -143,14 +163,127 @@ auto reader = [](string path) noexcept
 #endif
 
   return observations;
-};
+}
 
-//_________________________________________________________________________________________________
+auto manhattanDistance(Pixels& pixels1, Pixels& pixels2)
+{
+  if (pixels1.size() != pixels2.size())
+  {
+    throw std::length_error("Inconsistent image sizes.");
+  }
+
+  auto length = pixels1.size();
+  auto distance = 0;
+
+  for (size_t i = 0; i < length; i++)
+  {
+    distance += abs(pixels1[i] - pixels2[i]);
+  }
+
+  return distance;
+}
+
+auto euclideanDistance(Pixels& pixels1, Pixels& pixels2)
+{
+  if (pixels1.size() != pixels2.size())
+  {
+    throw std::length_error("Inconsistent image sizes.");
+  }
+
+  auto length = pixels1.size();
+  auto distance = 0;
+
+  for (size_t i = 0; i < length; i++)
+  {
+    // Use int product instead of pow() for performance.
+    //      distance += pow(pixels1[i] - pixels2[i], 2);
+    int dif = pixels1[i] - pixels2[i];
+    distance += dif * dif;
+  }
+
+  return distance;
+}
+
+auto classify(Observations& trainingData, Distance dist, Pixels& pixels) noexcept
+{
+  auto shortest = DBL_MAX;
+  auto currentBest = Observation();
+
+  for (Observation& obs : trainingData)
+  {
+    auto distance = dist(obs.pixels(), pixels);
+
+    if (distance < shortest)
+    {
+      shortest = distance;
+      currentBest = obs;
+    }
+  }
+
+  return currentBest.label();
+}
+
+//auto manhattanClassifier(Observations& trainingData, Pixels& pixels) noexcept
+//{
+//  return classify(trainingData, manhattanDistance, pixels);
+//}
+
+// auto euclideanClassifier(Observations& trainingData, Pixels& pixels) noexcept
+// {
+//   return classify(trainingData, euclideanDistance, pixels);
+// }
+
+#define USE_CONCURRENCY
+
+auto evaluate(Observations& validationData, Classifier classifier) noexcept
+{
+  auto length = validationData.size();
+
+#ifdef USE_CONCURRENCY
+#include <atomic>
+
+  atomic<int> sum = 0;
+
+  concurrency::parallel_for_each(begin(validationData), end(validationData), [&](Observation& it)
+  {
+    if (classifier(it.pixels()) == it.label())
+    {
+      sum += 1;
+    }
+  });
+#else
+  int sum = 0;
+
+  for (auto it = begin(validationSet); it != end(validationSet); ++it)
+  {
+    if (classifier(it->pixels()) == it->label())
+    {
+      sum += 1;
+    }
+  }
+#endif
+  cout << "Sum = " << sum << "\n";  // For testing purpose only.
+  cout << "Correctly classified: " << ((double)sum) / length * 100.0 << " %\n";
+}
+
+auto evaluateAndPrintElapsedTime(Observations& validationData, Classifier classifier, string message)
+{
+  using namespace std::chrono;
+
+  auto start = high_resolution_clock().now();
+
+  evaluate(validationData, classifier);  // Execute the digit recognizer process.
+
+  auto finish = high_resolution_clock().now();
+  auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(finish - start);
+
+  cout.precision(5);
+  cout << message << elapsedMilliseconds.count() / 1000.0 << "sec\n\n";
+}
 
 // main function
 int main() noexcept
 {
-  // Some lambdas are defined after this part, because they depend on definitions here.
   cout << "  Manhattan C++ Functional" << "\n";
 
   using namespace std::chrono;
@@ -169,152 +302,23 @@ int main() noexcept
   cout.precision(5);
   cout << "Elapsed time for reading files = " << elapsedMilliseconds.count() / 1000.0 << "sec\n\n";
   
-  //_________________________________________________________________________________________________
-
-  // manhattanDistance lambda
-  auto manhattanDistance = [](Pixels& pixels1, Pixels& pixels2)
-  {
-    if (pixels1.size() != pixels2.size())
-    {
-      throw std::length_error("Inconsistent image sizes.");
-    }
-
-    auto length = pixels1.size();
-    auto distance = 0;
-
-    for (size_t i = 0; i < length; i++)
-    {
-      distance += abs(pixels1[i] - pixels2[i]);
-    }
-
-    return distance;
-  };
-
-  //_________________________________________________________________________________________________
-  
-  // euclideanDistance lambda
-  auto euclideanDistance = [](Pixels& pixels1, Pixels& pixels2)
-  {
-    if (pixels1.size() != pixels2.size())
-    {
-      throw std::length_error("Inconsistent image sizes.");
-    }
-
-    auto length = pixels1.size();
-    auto distance = 0;
-
-    for (size_t i = 0; i < length; i++)
-    {
-      // Use int product instead of pow() for performance.
-//      distance += pow(pixels1[i] - pixels2[i], 2);
-      int dif = pixels1[i] - pixels2[i];
-      distance += dif * dif;
-    }
-
-    return distance;
-  };
-
-  //_________________________________________________________________________________________________
-
-  // classify function
-  auto classify = [](Observations& trainingSet, Distance dist, Pixels& pixels) noexcept
-  {
-    auto shortest = DBL_MAX;
-    auto currentBest = Observation();
-
-    for (Observation& obs : trainingSet)
-    {
-      auto distance = dist(obs.pixels(), pixels);
-
-      if (distance < shortest)
-      {
-        shortest = distance;
-        currentBest = obs;
-      }
-    }
-
-    return currentBest.label();
-  };
-
-  //_________________________________________________________________________________________________
-
   // manhattanClassifier lambda
-  auto manhattanClassifier = [classify, &trainingData, manhattanDistance](Pixels& pixels) noexcept
+  auto manhattanClassifier = [&trainingData](Pixels& pixels) noexcept
   {
     return classify(trainingData, manhattanDistance, pixels);
   };
 
-  //_________________________________________________________________________________________________
-
   // euclideanClassifier lambda
-  auto euclideanClassifier = [classify, &trainingData, euclideanDistance](Pixels& pixels) noexcept
+  auto euclideanClassifier = [&trainingData](Pixels& pixels) noexcept
   {
     return classify(trainingData, euclideanDistance, pixels);
   };
 
-  //_________________________________________________________________________________________________
-
-  #define USE_CONCURRENCY
-
-  // evaluate lambda
-  auto evaluate = [](Observations& validationSet, Classifier classifier) noexcept
-  {
-    auto length = validationSet.size();
-
-#ifdef USE_CONCURRENCY
-    #include <atomic>
-
-    atomic<int> sum = 0;
-
-    concurrency::parallel_for_each(begin(validationSet), end(validationSet), [&](Observation& it)
-    {
-      if (classifier(it.pixels()) == it.label())
-      {
-        sum += 1;
-      }
-    });
-#else
-    int sum = 0;
-
-    for (auto it = begin(validationSet); it != end(validationSet); ++it)
-    {
-      if (classifier(it->pixels()) == it->label())
-      {
-        sum += 1;
-      }
-    }
-#endif
-    cout << "Sum = " << sum << "\n";  // For testing purpose only.
-    cout << "Correctly classified: " << ((double)sum) / length * 100.0 << " %\n";
-  };
-
-  //_________________________________________________________________________________________________
-
   // Use the Manhattan Distance
-  {
-    auto start = high_resolution_clock().now();
-
-    evaluate(validationData, manhattanClassifier);  // Execute the digit recognizer process.
-
-    auto finish = high_resolution_clock().now();
-    auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(finish - start);
-
-    cout.precision(5);
-    cout << "Elapsed time for Manhattan Distance = " << elapsedMilliseconds.count() / 1000.0 << "sec\n\n";
-  }
+  evaluateAndPrintElapsedTime(validationData, manhattanClassifier, "Elapsed time for Manhattan Distance = ");  // Execute the digit recognizer process.
 
   // Use the Euclidean Distance
-  {
-    auto start = high_resolution_clock().now();
-
-    evaluate(validationData, euclideanClassifier);  // Execute the digit recognizer process.
-
-    auto finish = high_resolution_clock().now();
-    auto elapsedMilliseconds2 = chrono::duration_cast<chrono::milliseconds>(finish - start);
-
-    cout.precision(5);
-    cout << "Elapsed time for Euclidean Distance= " << elapsedMilliseconds2.count() / 1000.0 << "sec\n\n";
-  }
+  evaluateAndPrintElapsedTime(validationData, euclideanClassifier, "Elapsed time for Euclidean Distance = ");  // Execute the digit recognizer process.
 
   cout << "Press any key to terminate the program...";
   cin.get();

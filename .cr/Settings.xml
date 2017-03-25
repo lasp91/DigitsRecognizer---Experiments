@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Containers>
+  <Container Key="-1592402827">
+    <Items>
+      <Item Id="{2e4b66f7-1d9a-4135-ae78-43708817a6db}">
+        <Id>1</Id>
+        <File>Compiled\Program.fs</File>
+        <Line>39</Line>
+        <Character>8</Character>
+      </Item>
+      <Item Id="{84f3e3a5-a6d4-495f-bef1-518dd2358f6f}">
+        <Id>2</Id>
+        <File>Compiled\Program.fs</File>
+        <Line>21</Line>
+        <Character>18</Character>
+      </Item>
+    </Items>
+  </Container>
+</Containers>
