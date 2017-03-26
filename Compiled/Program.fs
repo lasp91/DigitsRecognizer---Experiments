@@ -38,7 +38,7 @@ let main argv =
         ||> Array.map2 (fun x y -> abs (x - y))
         |> Array.sum
 
-    let manhattanDistance2 (pixels1 : int[], pixels2 : int[]) = // Using all imperative
+    let manhattanDistanceImperative (pixels1 : int[], pixels2 : int[]) =
         let mutable sum = 0
 
         for i = 0 to pixels1.Length - 1 do
@@ -50,6 +50,14 @@ let main argv =
 //        |> Array.map (fun (x, y) -> pown (x - y) 2)
         |> Array.map (fun (x, y) -> (x - y) * (x - y))
         |> Array.sum
+
+    let euclideanDistanceImperative (pixels1 : int[], pixels2 : int[]) =
+        let mutable sum = 0
+
+        for i = 0 to pixels1.Length - 1 do
+          let dif = abs(pixels1.[i] - pixels2.[i])
+          sum <- sum + dif * dif
+        sum
 
     let classify (trainingSet : Observation[]) (dist : Distance)  (pixels : int[]) =
         trainingSet
@@ -64,8 +72,8 @@ let main argv =
 //            |> fun x -> x.Label
 //        classify
 
-    let manhattanClassifier = classify trainingData manhattanDistance2
-    let euclideanClassifier = classify trainingData euclideanDistance
+    let manhattanClassifier = classify trainingData manhattanDistanceImperative
+    let euclideanClassifier = classify trainingData euclideanDistanceImperative
 //    let manhattanClassifier = train trainingData manhattanDistance
 //    let euclideanClassifier = train trainingData euclideanDistance
 
